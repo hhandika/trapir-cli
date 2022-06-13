@@ -13,4 +13,4 @@ repository = "https://github.com/hhandika/trapir-cli"
 
 [dependencies]
 clap = { version = "3.*", features = ["cargo"] }
-kamadak-exif = "0.5.4"
+kamadak-exif = "0.5.*"
