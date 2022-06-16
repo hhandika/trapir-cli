@@ -1,4 +1,5 @@
 mod cli;
+mod image;
 mod io;
 
 fn main() {

@@ -8,7 +8,7 @@ pub fn get_args(version: &str) -> ArgMatches {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(
-            Command::new("image").about("Get image metadata").arg(
+            Command::new("metadata").about("Parse image metadata").arg(
                 Arg::new("dir")
                     .short('d')
                     .long("dir")
@@ -17,6 +17,19 @@ pub fn get_args(version: &str) -> ArgMatches {
                     .required(true)
                     .value_name("DIR"),
             ),
+        )
+        .subcommand(
+            Command::new("organize")
+                .about("Organize image based species name")
+                .arg(
+                    Arg::new("dir")
+                        .short('d')
+                        .long("dir")
+                        .help("Directory to scan")
+                        .takes_value(true)
+                        .required(true)
+                        .value_name("DIR"),
+                ),
         )
         .get_matches()
 }
