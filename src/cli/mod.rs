@@ -48,26 +48,24 @@ impl<'a> FileOrganizer<'a> {
             .filter(|entry| entry.file_type().is_file())
             .for_each(|file| {
                 let ext = match file.path().extension() {
-                    Some(ext) => ext,
+                    Some(ext) => ext.to_string_lossy().to_string(),
                     None => return,
                 };
-                ext_found.push(ext.to_string_lossy().to_string());
+                if match_extension(&ext) {
+                    ext_found.push(ext);
+                }
             });
 
         ext_found.sort();
         ext_found.dedup();
-        println!("Found {} extensions", ext_found.len());
-        ext_found.iter().for_each(|ext| {
-            if match_extension(ext) {
-                println!("{}", ext);
-            }
-        });
+        println!("Found {} matched extensions", ext_found.len());
+        ext_found.iter().for_each(|ext| println!("{}", ext));
     }
 }
 
 fn match_extension(text: &str) -> bool {
     lazy_static! { // Match the first word in the block
-        static ref RE: Regex = Regex::new(r"^.*\.((?i)jpg|jpeg|avi|m4a|m4v|mp4)$").expect("Failed capturing file extension");
+        static ref RE: Regex = Regex::new(r"^((?i)jpg|jpeg|avi|m4a|m4v|mp4)").expect("Failed capturing file extension");
     }
 
     RE.is_match(text)
@@ -144,5 +142,26 @@ impl<'a> ImageProcessor<'a> {
         );
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_match_extension() {
+        assert!(match_extension("jpg"));
+        assert!(match_extension("JPG"));
+        assert!(match_extension("jpeg"));
+        assert!(match_extension("JPEG"));
+        assert!(match_extension("avi"));
+        assert!(match_extension("AVI"));
+        assert!(match_extension("m4a"));
+        assert!(match_extension("M4A"));
+        assert!(match_extension("m4v"));
+        assert!(match_extension("M4V"));
+        assert!(match_extension("mp4"));
+        assert!(match_extension("MP4"));
     }
 }
