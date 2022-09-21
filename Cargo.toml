@@ -15,6 +15,7 @@ repository = "https://github.com/hhandika/trapir-cli"
 clap = { version = "3.*", features = ["cargo"] }
 kamadak-exif = "0.5.*"
 glob = "0.3.*"
+walkdir = "2.*"
 
 
 [[bin]]

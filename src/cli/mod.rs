@@ -5,6 +5,7 @@ use std::path::Path;
 
 use clap::ArgMatches;
 use exif::{In, Tag};
+use walkdir::WalkDir;
 
 use crate::io::files;
 
@@ -22,7 +23,39 @@ pub fn parse_args(version: &str) {
     let args = args::get_args(version);
     match args.subcommand() {
         Some(("image", img_matches)) => ImageProcessor::new(img_matches).process(),
+        Some(("organize", org_matches)) => FileOrganizer::new(org_matches).process(),
         _ => unreachable!("Unknown subcommand"),
+    }
+}
+
+struct FileOrganizer<'a> {
+    matches: &'a ArgMatches,
+}
+
+impl<'a> FileOrganizer<'a> {
+    fn new(matches: &'a ArgMatches) -> Self {
+        Self { matches }
+    }
+
+    fn process(&self) {
+        let input = self.matches.value_of("dir").expect("No directory provided");
+        let mut ext_found = Vec::new();
+        WalkDir::new(input)
+            .into_iter()
+            .filter_map(|ok| ok.ok())
+            .filter(|entry| entry.file_type().is_file())
+            .for_each(|file| {
+                let ext = match file.path().extension() {
+                    Some(ext) => ext,
+                    None => return,
+                };
+                ext_found.push(ext.to_string_lossy().to_string());
+            });
+
+        ext_found.sort();
+        ext_found.dedup();
+        println!("Found {} extensions", ext_found.len());
+        ext_found.iter().for_each(|ext| println!("{}", ext));
     }
 }
 
