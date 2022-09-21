@@ -5,6 +5,8 @@ use std::path::Path;
 
 use clap::ArgMatches;
 use exif::{In, Tag};
+use lazy_static::lazy_static;
+use regex::Regex;
 use walkdir::WalkDir;
 
 use crate::io::files;
@@ -55,8 +57,20 @@ impl<'a> FileOrganizer<'a> {
         ext_found.sort();
         ext_found.dedup();
         println!("Found {} extensions", ext_found.len());
-        ext_found.iter().for_each(|ext| println!("{}", ext));
+        ext_found.iter().for_each(|ext| {
+            if match_extension(ext) {
+                println!("{}", ext);
+            }
+        });
     }
+}
+
+fn match_extension(text: &str) -> bool {
+    lazy_static! { // Match the first word in the block
+        static ref RE: Regex = Regex::new(r"^.*\.((?i)jpg|jpeg|avi|m4a|m4v|mp4)$").expect("Failed capturing file extension");
+    }
+
+    RE.is_match(text)
 }
 
 struct ImageProcessor<'a> {
