@@ -38,6 +38,15 @@ pub fn get_args(version: &str) -> ArgMatches {
                         .takes_value(true)
                         .required(true)
                         .value_name("DIR"),
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .help("Output directory")
+                        .takes_value(true)
+                        .required(true)
+                        .value_name("DIR"),
                 ),
         )
         .subcommand(

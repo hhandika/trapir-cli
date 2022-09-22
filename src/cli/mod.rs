@@ -72,7 +72,8 @@ impl<'a> OrganizerCli<'a> {
             .matches
             .value_of("dir")
             .expect("Failed parsing a config file");
-        Organizer::new().organize(Path::new(dir), Path::new(input));
+        let output = self.matches.value_of("output").unwrap_or(dir);
+        Organizer::new().organize(Path::new(dir), Path::new(input), Path::new(output));
     }
 }
 

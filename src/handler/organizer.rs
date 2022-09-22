@@ -25,15 +25,15 @@ impl Organizer {
         }
     }
 
-    pub fn organize(&mut self, input_dir: &Path, cfg_path: &Path) {
+    pub fn organize(&mut self, input_dir: &Path, cfg_path: &Path, output_dir: &Path) {
         self.parse_config_csv(cfg_path);
         self.print_input(input_dir, &cfg_path);
         let img_paths = Finder::new(input_dir).scan_directory();
         self.parse_img_records(&img_paths);
-        self.organize_by_taxa();
+        self.organize_by_taxa(output_dir);
     }
 
-    fn organize_by_taxa(&self) {
+    fn organize_by_taxa(&self, output_dir: &Path) {
         self.records.iter().for_each(|rec| {
             let taxon_name = rec.scientific_id.trim().replace(" ", "_").replace(".", "");
             let img_path = match self.img_records.get(&rec.image_id) {
@@ -44,8 +44,11 @@ impl Organizer {
                 }
             };
 
-            let taxon_path = Path::new(&taxon_name).join(img_path);
-            fs::rename(img_path, taxon_path).expect("Could not move file");
+            let taxon_path = Path::new(&taxon_name);
+            let output_path = output_dir.join(taxon_path).join(img_path);
+            fs::create_dir_all(output_path.parent().expect("Could not get parent path"))
+                .expect("Could not create directory");
+            fs::rename(img_path, output_path).expect("Could not move file");
         })
     }
 
