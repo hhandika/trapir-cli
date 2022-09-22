@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
 };
@@ -13,7 +13,7 @@ use crate::io::{finder::Finder, spinner};
 pub struct Organizer {
     img_records: HashMap<String, PathBuf>,
     records: Vec<ImgRecords>,
-    taxa: Vec<String>,
+    taxa: HashSet<String>,
 }
 
 impl Organizer {
@@ -21,7 +21,7 @@ impl Organizer {
         Self {
             img_records: HashMap::default(),
             records: Vec::new(),
-            taxa: Vec::new(),
+            taxa: HashSet::default(),
         }
     }
 
@@ -29,12 +29,15 @@ impl Organizer {
         let img_paths = Finder::new(input_dir).scan_directory();
         self.parse_config_csv(cfg_path);
         self.parse_img_records();
+        self.parse_taxa();
         self.print_input(input_dir, &cfg_path);
         self.organize_by_taxa(&img_paths, output_dir);
     }
 
     fn organize_by_taxa(&self, img_paths: &[PathBuf], output_dir: &Path) {
         let spin = spinner::set_spinner();
+        let mut counts = 0;
+        let mut skipped = 0;
         spin.set_message("Organizing images by taxa");
 
         img_paths.iter().for_each(|img_path| {
@@ -54,19 +57,29 @@ impl Organizer {
             fs::create_dir_all(output_path.parent().expect("Could not get parent path"))
                 .expect("Could not create directory");
             match fs::rename(img_path, &output_path) {
-                Ok(_) => (),
+                Ok(_) => counts += 1,
                 Err(e) => {
                     spin.set_message(format!(
                         "Could not move image: {} for {}",
                         e,
                         output_path.display()
                     ));
+                    skipped += 1;
                     return;
                 }
             }
         });
 
-        spin.finish_with_message("Done organizing images by taxa!");
+        spin.finish_with_message("Done organizing images by taxa!\n");
+
+        log::info!("Moved {} images", counts);
+        log::info!("Skipped {} images", skipped);
+    }
+
+    fn parse_taxa(&mut self) {
+        self.records.iter().for_each(|record| {
+            self.taxa.insert(record.scientific_id.clone());
+        });
     }
 
     fn parse_img_records(&mut self) {
