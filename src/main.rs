@@ -1,4 +1,5 @@
 mod cli;
+mod handler;
 mod image;
 mod io;
 

@@ -31,5 +31,18 @@ pub fn get_args(version: &str) -> ArgMatches {
                         .value_name("DIR"),
                 ),
         )
+        .subcommand(
+            Command::new("summarize")
+                .about("Summarize all camera traps images recursively in a directory")
+                .arg(
+                    Arg::new("dir")
+                        .short('d')
+                        .long("dir")
+                        .help("Directory to scan")
+                        .takes_value(true)
+                        .required(true)
+                        .value_name("DIR"),
+                ),
+        )
         .get_matches()
 }

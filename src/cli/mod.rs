@@ -5,11 +5,17 @@ use std::path::Path;
 
 use clap::ArgMatches;
 use exif::{In, Tag};
-use lazy_static::lazy_static;
-use regex::Regex;
-use walkdir::WalkDir;
+use log::LevelFilter;
+use log4rs::append::console::ConsoleAppender;
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
 
+use crate::handler::summary::Summary;
+use crate::image::finder::Finder;
 use crate::io::files;
+
+const LOG_FILE: &str = "trapir.log";
 
 macro_rules! print_exif {
     ($exif: ident, $name: ident, $tag: ident, $msg: expr) => {
@@ -23,60 +29,71 @@ macro_rules! print_exif {
 
 pub fn parse_args(version: &str) {
     let args = args::get_args(version);
+    setup_logger().expect("Could not setup logger");
     match args.subcommand() {
-        Some(("image", img_matches)) => ImageProcessor::new(img_matches).process(),
-        Some(("organize", org_matches)) => FileOrganizer::new(org_matches).process(),
+        Some(("image", img_matches)) => ImageCli::new(img_matches).process(),
+        Some(("organize", org_matches)) => OrganizerCli::new(org_matches).process(),
+        Some(("summarize", sum_matches)) => SummaryCli::new(sum_matches).summarize(),
         _ => unreachable!("Unknown subcommand"),
     }
 }
 
-struct FileOrganizer<'a> {
+struct SummaryCli<'a> {
     matches: &'a ArgMatches,
 }
 
-impl<'a> FileOrganizer<'a> {
+impl<'a> SummaryCli<'a> {
+    fn new(matches: &'a ArgMatches) -> Self {
+        Self { matches }
+    }
+
+    fn summarize(&self) {
+        let input = self.matches.value_of("dir").expect("No directory provided");
+        let image_paths = Finder::new(Path::new(input)).scan_directory();
+        Summary::new(&image_paths).summarize();
+    }
+}
+
+struct OrganizerCli<'a> {
+    matches: &'a ArgMatches,
+}
+
+impl<'a> OrganizerCli<'a> {
     fn new(matches: &'a ArgMatches) -> Self {
         Self { matches }
     }
 
     fn process(&self) {
         let input = self.matches.value_of("dir").expect("No directory provided");
-        let mut ext_found = Vec::new();
-        WalkDir::new(input)
-            .into_iter()
-            .filter_map(|ok| ok.ok())
-            .filter(|entry| entry.file_type().is_file())
-            .for_each(|file| {
-                let ext = match file.path().extension() {
-                    Some(ext) => ext.to_string_lossy().to_string(),
-                    None => return,
-                };
-                if match_extension(&ext) {
-                    ext_found.push(ext);
-                }
-            });
+        println!("Input directory: {}", input);
+        // let mut ext_found = Vec::new();
+        // // WalkDir::new(input)
+        // //     .into_iter()
+        // //     .filter_map(|ok| ok.ok())
+        // //     .filter(|entry| entry.file_type().is_file())
+        // //     .for_each(|file| {
+        // //         let ext = match file.path().extension() {
+        // //             Some(ext) => ext.to_string_lossy().to_string(),
+        // //             None => return,
+        // //         };
+        // //         if match_extension(&ext) {
+        // //             ext_found.push(ext);
+        // //         }
+        // //     });
 
-        ext_found.sort();
-        ext_found.dedup();
-        println!("Found {} matched extensions", ext_found.len());
-        ext_found.iter().for_each(|ext| println!("{}", ext));
+        // ext_found.sort();
+        // ext_found.dedup();
+        // println!("Found {} matched extensions", ext_found.len());
+        // ext_found.iter().for_each(|ext| println!("{}", ext));
     }
 }
 
-fn match_extension(text: &str) -> bool {
-    lazy_static! { // Match the first word in the block
-        static ref RE: Regex = Regex::new(r"^((?i)jpg|jpeg|avi|m4a|m4v|mp4)").expect("Failed capturing file extension");
-    }
-
-    RE.is_match(text)
-}
-
-struct ImageProcessor<'a> {
+struct ImageCli<'a> {
     matches: &'a ArgMatches,
 }
 
-impl<'a> ImageProcessor<'a> {
-    pub fn new(matches: &'a ArgMatches) -> ImageProcessor<'a> {
+impl<'a> ImageCli<'a> {
+    pub fn new(matches: &'a ArgMatches) -> ImageCli<'a> {
         Self { matches: matches }
     }
 
@@ -145,23 +162,31 @@ impl<'a> ImageProcessor<'a> {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
+fn setup_logger() -> Result<()> {
+    let log_dir = std::env::current_dir()?;
+    let target = log_dir.join(LOG_FILE);
+    let tofile = FileAppender::builder()
+        .encoder(Box::new(PatternEncoder::new(
+            "{d(%Y-%m-%d %H:%M:%S %Z)} - {l} - {m}\n",
+        )))
+        .build(target)?;
 
-    #[test]
-    fn test_match_extension() {
-        assert!(match_extension("jpg"));
-        assert!(match_extension("JPG"));
-        assert!(match_extension("jpeg"));
-        assert!(match_extension("JPEG"));
-        assert!(match_extension("avi"));
-        assert!(match_extension("AVI"));
-        assert!(match_extension("m4a"));
-        assert!(match_extension("M4A"));
-        assert!(match_extension("m4v"));
-        assert!(match_extension("M4V"));
-        assert!(match_extension("mp4"));
-        assert!(match_extension("MP4"));
-    }
+    let stdout = ConsoleAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{m}\n")))
+        .build();
+
+    let config = Config::builder()
+        .appender(Appender::builder().build("stdout", Box::new(stdout)))
+        .appender(Appender::builder().build("logfile", Box::new(tofile)))
+        .build(
+            Root::builder()
+                .appender("stdout")
+                .appender("logfile")
+                .build(LevelFilter::Info),
+        )
+        .expect("Failed building log configuration");
+
+    log4rs::init_config(config).expect("Cannot initiate log configuration");
+
+    Ok(())
 }
