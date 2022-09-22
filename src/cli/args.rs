@@ -29,6 +29,15 @@ pub fn get_args(version: &str) -> ArgMatches {
                         .takes_value(true)
                         .required(true)
                         .value_name("DIR"),
+                )
+                .arg(
+                    Arg::new("input")
+                        .short('i')
+                        .long("input")
+                        .help("Input a config file")
+                        .takes_value(true)
+                        .required(true)
+                        .value_name("DIR"),
                 ),
         )
         .subcommand(

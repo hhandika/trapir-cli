@@ -11,9 +11,9 @@ use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 
+use crate::handler::organizer::Organizer;
 use crate::handler::summary::Summary;
-use crate::image::finder::Finder;
-use crate::io::files;
+use crate::io::finder::Finder;
 
 const LOG_FILE: &str = "trapir.log";
 
@@ -32,7 +32,7 @@ pub fn parse_args(version: &str) {
     setup_logger().expect("Could not setup logger");
     match args.subcommand() {
         Some(("image", img_matches)) => ImageCli::new(img_matches).process(),
-        Some(("organize", org_matches)) => OrganizerCli::new(org_matches).process(),
+        Some(("organize", org_matches)) => OrganizerCli::new(org_matches).organize(),
         Some(("summarize", sum_matches)) => SummaryCli::new(sum_matches).summarize(),
         _ => unreachable!("Unknown subcommand"),
     }
@@ -63,28 +63,16 @@ impl<'a> OrganizerCli<'a> {
         Self { matches }
     }
 
-    fn process(&self) {
-        let input = self.matches.value_of("dir").expect("No directory provided");
-        println!("Input directory: {}", input);
-        // let mut ext_found = Vec::new();
-        // // WalkDir::new(input)
-        // //     .into_iter()
-        // //     .filter_map(|ok| ok.ok())
-        // //     .filter(|entry| entry.file_type().is_file())
-        // //     .for_each(|file| {
-        // //         let ext = match file.path().extension() {
-        // //             Some(ext) => ext.to_string_lossy().to_string(),
-        // //             None => return,
-        // //         };
-        // //         if match_extension(&ext) {
-        // //             ext_found.push(ext);
-        // //         }
-        // //     });
-
-        // ext_found.sort();
-        // ext_found.dedup();
-        // println!("Found {} matched extensions", ext_found.len());
-        // ext_found.iter().for_each(|ext| println!("{}", ext));
+    fn organize(&self) {
+        let input = self
+            .matches
+            .value_of("input")
+            .expect("Failed parsing a config file");
+        let dir = self
+            .matches
+            .value_of("dir")
+            .expect("Failed parsing a config file");
+        Organizer::new().organize(Path::new(dir), Path::new(input));
     }
 }
 
@@ -104,7 +92,7 @@ impl<'a> ImageCli<'a> {
                 .expect("Failed parsing dir input"),
         );
 
-        let images = files::find_images(dir);
+        let images = Finder::new(dir).find_jpeg();
         images.iter().for_each(|image| {
             println!("{}", image.display());
             // self.print_file_metadata(image)

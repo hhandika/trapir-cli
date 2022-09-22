@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use glob::{glob_with, MatchOptions};
 use lazy_static::lazy_static;
 use regex::Regex;
 use walkdir::WalkDir;
@@ -29,6 +30,19 @@ impl<'a> Finder<'a> {
                 }
             });
         paths
+    }
+
+    pub fn find_jpeg(&self) -> Vec<PathBuf> {
+        let options = MatchOptions {
+            case_sensitive: false,
+            require_literal_separator: false,
+            require_literal_leading_dot: false,
+        };
+
+        glob_with(&format!("{}/*.JPG", self.input.display()), options)
+            .expect("Failed globbing files")
+            .filter_map(|ok| ok.ok())
+            .collect::<Vec<PathBuf>>()
     }
 }
 
