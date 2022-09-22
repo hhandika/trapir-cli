@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::io::prelude::*;
+use std::{fs::File, io::BufWriter, path::PathBuf};
 
 use colored::Colorize;
 
@@ -16,6 +17,7 @@ impl<'a> Summary<'a> {
         extensions.sort();
         extensions.dedup();
         self.print_summary(&extensions);
+        self.write_summary();
     }
 
     fn parse_extension(&self, image_paths: &[PathBuf]) -> Vec<String> {
@@ -29,6 +31,14 @@ impl<'a> Summary<'a> {
                     .to_string()
             })
             .collect()
+    }
+
+    fn write_summary(&self) {
+        let file = File::create("summary.txt").expect("Could not open file");
+        let mut writer = BufWriter::new(file);
+        self.img_paths.iter().for_each(|img_path| {
+            writeln!(writer, "{}", img_path.display()).expect("Could not write to file");
+        });
     }
 
     fn print_summary(&self, exts: &[String]) {
