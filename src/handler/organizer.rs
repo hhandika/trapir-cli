@@ -42,7 +42,7 @@ impl Organizer {
 
         img_paths.iter().for_each(|img_path| {
             let img_name = img_path
-                .file_name()
+                .file_stem()
                 .expect("Failed parsing filenames")
                 .to_string_lossy()
                 .to_uppercase()
@@ -70,9 +70,9 @@ impl Organizer {
             }
         });
 
-        spin.finish_with_message("Done organizing images by taxa!\n");
+        spin.finish_with_message("Done organizing images by taxa!");
 
-        log::info!("Moved {} images", counts);
+        log::info!("\nMoved {} images", counts);
         log::info!("Skipped {} images", skipped);
     }
 
@@ -85,10 +85,16 @@ impl Organizer {
     fn parse_img_records(&mut self) {
         self.records.iter().for_each(|rec| {
             let taxon_name = rec.scientific_id.trim().replace(" ", "_").replace(".", "");
+            let img_id = Path::new(rec.image_id.trim());
+            let img_name = match img_id.file_stem() {
+                Some(name) => name.to_string_lossy().to_uppercase().to_string(),
+                None => img_id.to_string_lossy().to_uppercase().to_string(),
+            };
+
             let path = Path::new(&taxon_name)
                 .join(&rec.locality_id)
                 .join(&rec.station);
-            self.img_records.insert(rec.image_id.to_uppercase(), path);
+            self.img_records.insert(img_name, path);
         })
     }
 
