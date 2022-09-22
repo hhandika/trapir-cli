@@ -38,19 +38,19 @@ impl Organizer {
         spin.set_message("Organizing images by taxa");
         self.records.iter().for_each(|rec| {
             let taxon_name = rec.scientific_id.trim().replace(" ", "_").replace(".", "");
-            let img_path = match self.img_records.get(&rec.image_id) {
-                Some(path) => path,
+            match self.img_records.get(&rec.image_id) {
+                Some(img_path) => {
+                    let taxon_path = Path::new(&taxon_name);
+                    let output_path = output_dir.join(taxon_path).join(img_path);
+                    fs::create_dir_all(output_path.parent().expect("Could not get parent path"))
+                        .expect("Could not create directory");
+                    fs::rename(img_path, output_path).expect("Could not move file");
+                }
                 None => {
                     log::error!("Could not find image path for {}", rec.image_id);
                     return;
                 }
             };
-
-            let taxon_path = Path::new(&taxon_name);
-            let output_path = output_dir.join(taxon_path).join(img_path);
-            fs::create_dir_all(output_path.parent().expect("Could not get parent path"))
-                .expect("Could not create directory");
-            fs::rename(img_path, output_path).expect("Could not move file");
         });
         spin.finish_with_message("Done organizing images by taxa!");
     }
