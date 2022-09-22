@@ -30,7 +30,7 @@ impl Organizer {
         self.parse_config_csv(cfg_path);
         self.parse_img_records();
         self.parse_taxa();
-        self.print_input(input_dir, &cfg_path);
+        self.print_input(input_dir, &cfg_path, &img_paths);
         self.organize_by_taxa(&img_paths, output_dir);
     }
 
@@ -108,11 +108,11 @@ impl Organizer {
         });
     }
 
-    fn print_input(&self, input_dir: &Path, cfg_path: &Path) {
+    fn print_input(&self, input_dir: &Path, cfg_path: &Path, img_paths: &[PathBuf]) {
         log::info!("{}", "Input".yellow().bold());
         log::info!("{:18}: {}", "Config file", cfg_path.display());
         log::info!("{:18}: {}", "Input directory", input_dir.display());
-        log::info!("{:18}: {}", "File counts", self.img_records.len());
+        log::info!("{:18}: {}", "File counts", img_paths.len());
         log::info!("{:18}: {}", "Record counts", self.records.len());
         log::info!("{:18}: {}", "Taxon counts", self.taxa.len());
     }
