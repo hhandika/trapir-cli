@@ -28,8 +28,8 @@ impl Organizer {
     pub fn organize(&mut self, input_dir: &Path, cfg_path: &Path, output_dir: &Path) {
         let img_paths = Finder::new(input_dir).scan_directory();
         self.parse_config_csv(cfg_path);
-        self.print_input(input_dir, &cfg_path);
         self.parse_img_records(&img_paths);
+        self.print_input(input_dir, &cfg_path);
         self.organize_by_taxa(output_dir);
     }
 
