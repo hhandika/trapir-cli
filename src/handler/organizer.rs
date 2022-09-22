@@ -41,19 +41,20 @@ impl Organizer {
         spin.set_message("Organizing images by taxa");
 
         img_paths.iter().for_each(|img_path| {
-            let img_name = img_path
-                .file_stem()
-                .expect("Failed parsing filenames")
-                .to_string_lossy()
-                .to_uppercase()
-                .to_string();
-
-            let output = match self.img_records.get(&img_name) {
+            let output = match self.img_records.get(
+                &img_path
+                    .file_stem()
+                    .expect("Error passing file stem")
+                    .to_string_lossy()
+                    .to_uppercase(),
+            ) {
                 Some(path) => Path::new(path),
                 None => Path::new("unknown"),
             };
 
-            let output_path = output_dir.join(output).join(img_name);
+            let output_path = output_dir
+                .join(output)
+                .join(img_path.file_name().expect("Failed parsing filenames"));
             fs::create_dir_all(output_path.parent().expect("Could not get parent path"))
                 .expect("Could not create directory");
             match fs::rename(img_path, &output_path) {
