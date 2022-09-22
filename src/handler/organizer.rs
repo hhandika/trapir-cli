@@ -44,7 +44,13 @@ impl Organizer {
                     let output_path = output_dir.join(taxon_path).join(img_path);
                     fs::create_dir_all(output_path.parent().expect("Could not get parent path"))
                         .expect("Could not create directory");
-                    fs::rename(img_path, output_path).expect("Could not move file");
+                    match fs::rename(img_path, output_path) {
+                        Ok(_) => (),
+                        Err(e) => {
+                            spin.set_message(format!("Could not move image: {}", e));
+                            return;
+                        }
+                    }
                 }
                 None => {
                     log::error!("Could not find image path for {}", rec.image_id);
