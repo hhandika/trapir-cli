@@ -8,7 +8,7 @@ use colored::Colorize;
 use csv::Reader;
 use serde::Deserialize;
 
-use crate::io::finder::Finder;
+use crate::io::{finder::Finder, spinner};
 
 pub struct Organizer {
     img_records: HashMap<String, PathBuf>,
@@ -34,6 +34,8 @@ impl Organizer {
     }
 
     fn organize_by_taxa(&self, output_dir: &Path) {
+        let spin = spinner::set_spinner();
+        spin.set_message("Organizing images by taxa");
         self.records.iter().for_each(|rec| {
             let taxon_name = rec.scientific_id.trim().replace(" ", "_").replace(".", "");
             let img_path = match self.img_records.get(&rec.image_id) {
@@ -49,7 +51,8 @@ impl Organizer {
             fs::create_dir_all(output_path.parent().expect("Could not get parent path"))
                 .expect("Could not create directory");
             fs::rename(img_path, output_path).expect("Could not move file");
-        })
+        });
+        spin.finish_with_message("Done organizing images by taxa!");
     }
 
     fn parse_img_records(&mut self, img_paths: &[PathBuf]) {
