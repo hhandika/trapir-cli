@@ -73,7 +73,7 @@ impl Organizer {
         self.records.iter().for_each(|rec| {
             let taxon_name = rec.scientific_id.trim().replace(" ", "_").replace(".", "");
             let path = Path::new(&taxon_name)
-                .join(&rec.locality)
+                .join(&rec.locality_id)
                 .join(&rec.station);
             self.img_records.insert(rec.image_id.to_uppercase(), path);
         })
@@ -100,7 +100,7 @@ impl Organizer {
 
 #[derive(Debug, Deserialize)]
 struct ImgRecords {
-    locality: String,
+    locality_id: String,
     station: String,
     image_id: String,
     scientific_id: String,
