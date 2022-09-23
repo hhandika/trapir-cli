@@ -6,6 +6,7 @@ use std::{
 
 use colored::Colorize;
 use csv::Reader;
+use fs_extra::file::{move_file_with_progress, CopyOptions, TransitProcess};
 use serde::Deserialize;
 
 use crate::io::{finder::Finder, spinner};
@@ -57,13 +58,35 @@ impl Organizer {
                 .join(img_path.file_name().expect("Failed parsing filenames"));
             fs::create_dir_all(output_path.parent().expect("Could not get parent path"))
                 .expect("Could not create directory");
-            match fs::rename(img_path, &output_path) {
-                Ok(_) => counts += 1,
+            let options = CopyOptions::new();
+            let handle = |process_info: TransitProcess| {
+                spin.set_message(format!(
+                    "Organizing images by taxa. Byte moved {}",
+                    process_info.total_bytes
+                ));
+            };
+
+            match move_file_with_progress(&img_path, &output_path, &options, handle) {
+                Ok(_) => {
+                    let dir = img_path.parent().expect("Could not get parent path");
+                    match fs::remove_dir(dir) {
+                        Ok(_) => (),
+                        Err(e) => {
+                            log::info!(
+                                "Failed removing original directory for {}: {}",
+                                dir.display(),
+                                e
+                            )
+                        }
+                    }
+
+                    counts += 1;
+                }
                 Err(e) => {
                     spin.set_message(format!(
-                        "Could not move image: {} for {}",
+                        "Could not move image: {}. Error: {}",
+                        output_path.display(),
                         e,
-                        output_path.display()
                     ));
                     skipped += 1;
                     return;

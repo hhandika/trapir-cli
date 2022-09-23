@@ -24,6 +24,7 @@ colored = "2.0.0"
 csv = "1.1.6"
 serde = "1.*"
 indicatif = "0.*"
+fs_extra = "1.*"
 
 [[bin]]
 name = "trapir"
