@@ -76,17 +76,17 @@ impl Organizer {
 
             match move_file_with_progress(&img_path, &output_path, &options, handle) {
                 Ok(_) => {
-                    let dir = img_path.parent().expect("Could not get parent path");
-                    match fs::remove_dir(dir) {
-                        Ok(_) => (),
-                        Err(e) => {
-                            log::info!(
-                                "Failed removing original directory for {}: {}",
-                                dir.display(),
-                                e
-                            )
-                        }
-                    }
+                    // let dir = img_path.parent().expect("Could not get parent path");
+                    // match fs::remove_dir(dir) {
+                    //     Ok(_) => (),
+                    //     Err(e) => {
+                    //         log::info!(
+                    //             "Failed removing original directory for {}: {}",
+                    //             dir.display(),
+                    //             e
+                    //         )
+                    //     }
+                    // }
 
                     counts += 1;
                 }
