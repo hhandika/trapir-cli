@@ -47,6 +47,13 @@ pub fn get_args(version: &str) -> ArgMatches {
                         .takes_value(true)
                         .required(true)
                         .value_name("DIR"),
+                )
+                .arg(
+                    Arg::new("copy-files")
+                        .short('c')
+                        .long("copy-files")
+                        .help("Copy files instead of moving")
+                        .takes_value(false),
                 ),
         )
         .subcommand(

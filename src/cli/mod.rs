@@ -73,7 +73,8 @@ impl<'a> OrganizerCli<'a> {
             .value_of("dir")
             .expect("Failed parsing a config file");
         let output = self.matches.value_of("output").unwrap_or(dir);
-        Organizer::new().organize(Path::new(dir), Path::new(input), Path::new(output));
+        let is_copy = self.matches.is_present("copy-files");
+        Organizer::new().organize(Path::new(dir), Path::new(input), Path::new(output), is_copy);
     }
 }
 

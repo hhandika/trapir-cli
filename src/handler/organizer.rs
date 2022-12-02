@@ -8,7 +8,7 @@ use std::{
 
 use colored::Colorize;
 use csv::Reader;
-use fs_extra::file::{move_file_with_progress, CopyOptions, TransitProcess};
+use fs_extra::file::{copy_with_progress, move_file_with_progress, CopyOptions, TransitProcess};
 use serde::Deserialize;
 
 use crate::io::{finder::Finder, spinner};
@@ -34,16 +34,22 @@ impl Organizer {
         }
     }
 
-    pub fn organize(&mut self, input_dir: &Path, cfg_path: &Path, output_dir: &Path) {
+    pub fn organize(
+        &mut self,
+        input_dir: &Path,
+        cfg_path: &Path,
+        output_dir: &Path,
+        is_copy: bool,
+    ) {
         let img_paths = Finder::new(input_dir).scan_directory();
         self.parse_config_csv(cfg_path);
         self.parse_img_records();
         self.parse_taxa();
         self.print_input(input_dir, &cfg_path, &img_paths);
-        self.organize_by_taxa(&img_paths, output_dir);
+        self.organize_by_taxa(&img_paths, output_dir, is_copy);
     }
 
-    fn organize_by_taxa(&self, img_paths: &[PathBuf], output_dir: &Path) {
+    fn organize_by_taxa(&self, img_paths: &[PathBuf], output_dir: &Path, is_copy: bool) {
         let spin = spinner::set_spinner();
         let mut counts = 0;
         let mut skipped = 0;
@@ -73,31 +79,38 @@ impl Organizer {
                     process_info.total_bytes
                 ));
             };
-
-            match move_file_with_progress(&img_path, &output_path, &options, handle) {
-                Ok(_) => {
-                    // let dir = img_path.parent().expect("Could not get parent path");
-                    // match fs::remove_dir(dir) {
-                    //     Ok(_) => (),
-                    //     Err(e) => {
-                    //         log::info!(
-                    //             "Failed removing original directory for {}: {}",
-                    //             dir.display(),
-                    //             e
-                    //         )
-                    //     }
-                    // }
-
-                    counts += 1;
+            if is_copy {
+                match copy_with_progress(img_path, &output_path, &options, handle) {
+                    Ok(_) => counts += 1,
+                    Err(_) => skipped += 1,
                 }
-                Err(e) => {
-                    spin.set_message(format!(
-                        "Could not move image: {}. Error: {}",
-                        output_path.display(),
-                        e,
-                    ));
-                    skipped += 1;
-                    return;
+                // .expect("Could not copy file");
+            } else {
+                match move_file_with_progress(&img_path, &output_path, &options, handle) {
+                    Ok(_) => {
+                        // let dir = img_path.parent().expect("Could not get parent path");
+                        // match fs::remove_dir(dir) {
+                        //     Ok(_) => (),
+                        //     Err(e) => {
+                        //         log::info!(
+                        //             "Failed removing original directory for {}: {}",
+                        //             dir.display(),
+                        //             e
+                        //         )
+                        //     }
+                        // }
+
+                        counts += 1;
+                    }
+                    Err(e) => {
+                        spin.set_message(format!(
+                            "Could not move image: {}. Error: {}",
+                            output_path.display(),
+                            e,
+                        ));
+                        skipped += 1;
+                        return;
+                    }
                 }
             }
         });
