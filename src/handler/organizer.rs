@@ -1,3 +1,5 @@
+//! Module for the organizer handler.
+
 use std::{
     collections::{HashMap, HashSet},
     fs,
@@ -11,6 +13,12 @@ use serde::Deserialize;
 
 use crate::io::{finder::Finder, spinner};
 
+// Steps:
+// 1. Read the CSV file
+// 2. Create a HashMap of the CSV file
+// 3. Create a HashSet of the taxon in the directory
+// 4. Iterate over the HashSet and check if the taxon is in the HashMap
+// 5. If the taxon is in the HashMap, move the file to the corresponding directory
 pub struct Organizer {
     img_records: HashMap<String, PathBuf>,
     records: Vec<ImgRecords>,
